@@ -15,6 +15,11 @@ from linebot.v3.messaging import (
     ButtonsTemplate,
     PostbackAction,
     DatetimePickerAction,
+    FlexMessage, 
+    BubbleContainer, 
+    BoxComponent, 
+    ButtonComponent,
+    TextMessage
 )
 from linebot.v3.webhooks import (
     MessageEvent,
@@ -22,11 +27,6 @@ from linebot.v3.webhooks import (
     PostbackEvent
 )
 import os
-
-# Azure
-from azure.ai.translation.text import TextTranslationClient
-from azure.core.credentials import AzureKeyCredential
-from azure.core.exceptions import HttpResponseError
 
 app = Flask(__name__)
 
@@ -79,8 +79,37 @@ def handle_message(event):
         alt_text="功能選單",
         template=buttons_template
     )
-
     reply_message(event, [message])
+
+@line_handler.add(PostbackEvent)
+def handle_postback(event):
+    data = event.postback.data
+
+    if data == "action=search":
+        # 回覆一個帶日期選擇器的 FlexMessage
+        flex = FlexMessage(
+            alt_text="選擇日期時間",
+            contents=BubbleContainer(
+                body=BoxComponent(
+                    layout="vertical",
+                    contents=[
+                        ButtonComponent(
+                            style="primary",
+                            color="#ff9933",
+                            action=DatetimePickerAction(
+                                label="選擇日期時間",
+                                data="action=datetime",
+                                mode="datetime",
+                                initial="2025-01-01T00:00",
+                                min="2024-01-01T00:00",
+                                max="2026-12-31T23:59"
+                            )
+                        )
+                    ]
+                )
+            )
+        )
+        reply_message(event, [flex])
 
 
 def reply_message(event, messages):
